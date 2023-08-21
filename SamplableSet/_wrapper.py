@@ -202,23 +202,30 @@ class SamplableSet:
 
         Args:
             n_samples (int, optional): If equal to 1, returns one element. If greater than 1, returns a generator that will return 'n_samples' elements.
+            replace (bool, option): If true, samples with replacement. If false, 'n_samples' must be less than or equal to the number of elements in the set. Default: True.
 
         Returns: An element of the set or a generator of 'n_samples' elements.
         """
+        
+        if not replace and self.size() < n_samples:
+            raise ValueError(
+                "Cannot sample without replacement more elements than the set contains."
+            )
         if n_samples == 1:
-            x = self.cpp_sample()
-            if not replace:
-                self.erase(x[0])
-            return x
+            return self.cpp_sample()
         else:
             return self.sample_generator(n_samples, replace)
 
     def sample_generator(self, n_samples, replace):
+        sampled_elements = []
         for _ in range(n_samples):
             x = self.cpp_sample()
             if not replace:
                 self.erase(x[0])
+                sampled_elements.append(x)
             yield x
+        for x in sampled_elements:
+            self.insert(*x)
 
     def element_generator(self):
         try:
